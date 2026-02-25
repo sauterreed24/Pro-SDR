@@ -1,0 +1,1828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Artemis — Intelligence Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /*
+    ═══════════════════════════════════════════════════════════════════════════
+    THEME & DESIGN TOKENS — Edit these for global theme changes
+    ═══════════════════════════════════════════════════════════════════════════
+    */
+    :root {
+      /* Backgrounds */
+      --bg-deep: #07090e;
+      --bg: #0c1018;
+      --surface: rgba(18, 24, 36, 0.85);
+      --surface-2: rgba(26, 34, 52, 0.6);
+      --glass: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.06);
+      /* Borders & Dividers */
+      --border: rgba(72, 88, 120, 0.35);
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      /* Text — WCAG AA contrast compliant */
+      --text: #f0f4fc;
+      --text-secondary: #e2e8f4;
+      --muted: #8b9bb4;
+      /* Accent & Brand */
+      --accent: #5b8def;
+      --accent-glow: rgba(91, 141, 239, 0.25);
+      --accent-hover: rgba(91, 141, 239, 0.15);
+      /* Semantic Colors */
+      --success: #22c55e;
+      --success-bg: rgba(34, 197, 94, 0.15);
+      --warning: #eab308;
+      --warning-bg: rgba(234, 179, 8, 0.15);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.15);
+      --info: #3b82f6;
+      --info-bg: rgba(59, 130, 246, 0.15);
+      /* Shadows & Depth */
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.25);
+      --shadow-elevated: 0 12px 40px rgba(0, 0, 0, 0.45), 0 0 1px rgba(255, 255, 255, 0.05);
+      /* Glassmorphism */
+      --blur-sm: 12px;
+      --blur-md: 20px;
+      --blur-lg: 24px;
+      /* Border Radius */
+      --radius: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      /* Transitions */
+      --ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /*
+    ═══════════════════════════════════════════════════════════════════════════
+    BASE RESET & BODY
+    ═══════════════════════════════════════════════════════════════════════════
+    */
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /*
+    ─── LAYOUT: App grid, sidebar, main, views ───
+    */
+    body {
+      font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59, 130, 246, 0.15), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 50%, rgba(139, 92, 246, 0.08), transparent);
+    }
+
+    .app-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr 340px;
+      min-height: 100vh;
+      transition: grid-template-columns 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .app-layout.kb-view-active,
+    .app-layout.dialer-view-active,
+    .app-layout.followups-view-active {
+      grid-template-columns: 260px 1fr;
+    }
+
+    .sidebar {
+      background: linear-gradient(180deg, rgba(14, 20, 32, 0.98) 0%, rgba(10, 14, 24, 0.98) 100%);
+      border-right: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      padding: 1.25rem 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .brand { padding: 0.9rem 1rem; margin-bottom: 0.5rem; }
+    .brand h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #fff 30%, #b8c7e8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .brand p { color: var(--muted); font-size: 0.75rem; margin-top: 0.2rem; }
+
+    .nav-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      padding: 0.5rem 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .nav-tab {
+      transition: transform 0.15s var(--ease-out);
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.7rem 1rem;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid transparent;
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+    .nav-tab:hover { color: var(--text); background: var(--glass); }
+    .nav-tab:active { transform: scale(0.98); }
+    .nav-tab.active {
+      color: var(--text);
+      background: linear-gradient(135deg, rgba(91, 141, 239, 0.2), rgba(139, 92, 246, 0.12));
+      border: 1px solid rgba(91, 141, 239, 0.3);
+      box-shadow: 0 0 0 1px rgba(91, 141, 239, 0.15);
+    }
+    .nav-tab .badge {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 6px;
+      background: rgba(234, 179, 8, 0.2);
+      color: #eab308;
+      margin-left: auto;
+    }
+
+    main {
+      padding: 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      position: relative;
+    }
+
+    .view {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      opacity: 0;
+      visibility: hidden;
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      pointer-events: none;
+      transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.35s ease;
+    }
+    .view.active {
+      opacity: 1;
+      visibility: visible;
+      position: relative;
+      pointer-events: auto;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.5rem 0;
+    }
+    .topbar h2 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; }
+    .topbar p { color: var(--muted); margin-top: 0.15rem; font-size: 0.85rem; }
+
+    .notif-wrap { position: relative; }
+    .notif-btn {
+      width: 44px; height: 44px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      backdrop-filter: blur(10px);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .notif-btn:hover { border-color: var(--glass-border); background: var(--surface-2); transform: translateY(-1px); }
+    .notif-btn svg { width: 20px; height: 20px; }
+    .notif-count {
+      position: absolute;
+      top: 8px; right: 8px;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--danger);
+      box-shadow: 0 0 0 2px var(--surface);
+    }
+    .notif-menu {
+      position: absolute;
+      top: calc(100% + 12px);
+      right: 0;
+      width: 320px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: rgba(14, 20, 32, 0.95);
+      backdrop-filter: blur(24px);
+      box-shadow: var(--shadow);
+      padding: 0.85rem;
+      display: none;
+      z-index: 10;
+    }
+    .notif-menu.open { display: block; }
+    .notif-menu h3 { font-size: 0.9rem; margin-bottom: 0.6rem; }
+    .notif-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.6rem 0.75rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      background: var(--glass);
+      margin-top: 0.5rem;
+    }
+
+    .pipeline-toolbar { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.5rem; }
+    .search-bar {
+      flex: 1;
+      min-width: 240px;
+      max-width: 400px;
+      background: rgba(8, 12, 22, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.6rem 1rem 0.6rem 2.5rem;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b9bb4' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: 0.75rem center;
+    }
+    .search-bar::placeholder { color: rgba(139, 155, 180, 0.6); }
+    .search-bar:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+    .empty-state {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+      background: linear-gradient(160deg, rgba(24, 32, 50, 0.4), rgba(16, 22, 36, 0.6));
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-lg);
+      text-align: center;
+      min-height: 220px;
+    }
+    .empty-state.visible { display: flex; }
+    .empty-state-icon { width: 64px; height: 64px; margin-bottom: 1rem; opacity: 0.6; }
+    .empty-state h4 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text); }
+    .empty-state p { font-size: 0.88rem; color: var(--muted); margin-bottom: 1.25rem; max-width: 360px; line-height: 1.5; }
+    .empty-state-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
+    .btn-import {
+      padding: 0.6rem 1.2rem;
+      background: linear-gradient(135deg, rgba(91, 141, 239, 0.25), rgba(139, 92, 246, 0.15));
+      border: 1px solid rgba(91, 141, 239, 0.4);
+      border-radius: 10px;
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-import:hover {
+      background: linear-gradient(135deg, rgba(91, 141, 239, 0.35), rgba(139, 92, 246, 0.22));
+      border-color: rgba(91, 141, 239, 0.6);
+      transform: translateY(-1px);
+    }
+    .btn-export {
+      padding: 0.6rem 1.2rem;
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1));
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      border-radius: 10px;
+      color: var(--success);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-export:hover {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(34, 197, 94, 0.18));
+      border-color: rgba(34, 197, 94, 0.6);
+      transform: translateY(-1px);
+    }
+    .btn-delete {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0.35rem;
+      border-radius: 6px;
+      transition: color 0.2s ease, background 0.2s ease;
+    }
+    .btn-delete:hover { color: var(--danger); background: var(--danger-bg); }
+    .table-card.has-content .empty-state { display: none !important; }
+    .table-card:not(.has-content) .table-wrap { display: none; }
+
+    .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 0.5rem; }
+    .kpi-card {
+      background: linear-gradient(145deg, rgba(28, 38, 58, 0.6), rgba(18, 26, 42, 0.85));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.15rem;
+      backdrop-filter: blur(12px);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(91, 141, 239, 0.08);
+      border-color: rgba(91, 141, 239, 0.25);
+    }
+    .kpi-card .kpi-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
+    .kpi-card .kpi-value { font-size: 1.65rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+    .kpi-card.accent .kpi-value { color: var(--accent); }
+    .kpi-card.success .kpi-value { color: var(--success); }
+    .kpi-card.warning .kpi-value { color: var(--warning); }
+    .kpi-card.info .kpi-value { color: var(--info); }
+
+    .quick-add-card {
+      background: linear-gradient(145deg, rgba(24, 32, 50, 0.6), rgba(16, 22, 36, 0.8));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+    }
+    .quick-add-title { font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem; }
+    .quick-add-form { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; }
+    .quick-add-form .field { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 0.25rem; }
+    .quick-add-form label { font-size: 0.72rem; color: var(--muted); }
+    .quick-add-form input {
+      background: rgba(8, 12, 22, 0.6);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 0.6rem 0.75rem;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .quick-add-form input::placeholder { color: rgba(139, 155, 180, 0.5); }
+    .quick-add-form input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .btn-add {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 0.6rem 1.1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      white-space: nowrap;
+    }
+    .btn-add:hover { box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4); transform: translateY(-1px); }
+    .btn-add:active { transform: translateY(0) scale(0.98); }
+
+    .table-card {
+      background: linear-gradient(145deg, rgba(24, 32, 50, 0.5), rgba(16, 22, 36, 0.75));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+    }
+    .table-card h3 { font-size: 0.95rem; font-weight: 600; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 800px; }
+    th, td { text-align: left; padding: 0.75rem 1rem; font-size: 0.85rem; border-bottom: 1px solid var(--border); }
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      background: rgba(12, 18, 28, 0.6);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    td { color: var(--text); }
+    tr:hover td { background: rgba(255, 255, 255, 0.04); transition: background 0.2s var(--ease-out); }
+    tr.pipeline-row { cursor: pointer; }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.3rem 0.65rem;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: opacity 0.2s ease;
+    }
+    .status-badge:hover { opacity: 0.9; }
+    .status-badge.booked { background: var(--success-bg); color: var(--success); border: 1px solid rgba(34, 197, 94, 0.3); }
+    .status-badge.qualified { background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(234, 179, 8, 0.3); }
+    .status-badge.no-show { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .status-badge.follow-up { background: var(--info-bg); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.3); }
+    .status-dropdown { position: relative; }
+    .status-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      min-width: 130px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(14, 20, 32, 0.98);
+      box-shadow: var(--shadow);
+      padding: 0.4rem;
+      display: none;
+      z-index: 5;
+    }
+    .status-dropdown-menu.open { display: block; }
+    .status-dropdown-menu .status-option {
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .status-dropdown-menu .status-option:hover { background: var(--glass); }
+
+    /* Omniscient Knowledge Base */
+    .kb-subnav {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      padding: 0.35rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+    }
+    .kb-subtab {
+      padding: 0.65rem 1.25rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .kb-subtab:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(91, 141, 239, 0.25);
+    }
+    .kb-subtab.active {
+      color: var(--text);
+      background: linear-gradient(135deg, rgba(91, 141, 239, 0.2), rgba(139, 92, 246, 0.12));
+      border-color: rgba(91, 141, 239, 0.4);
+      box-shadow: 0 0 0 1px rgba(91, 141, 239, 0.15), 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    .kb-subtab .beta-pill {
+      font-size: 0.6rem;
+      padding: 0.15rem 0.4rem;
+      margin-left: 0.4rem;
+      border-radius: 4px;
+      background: rgba(251, 191, 36, 0.2);
+      color: #fbbf24;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .kb-section {
+      display: none;
+      animation: kbFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    .kb-section.active { display: block; }
+    @keyframes kbFadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .kb-view { padding: 0.5rem 0; }
+    .kb-header {
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .kb-header h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #fff 40%, #b8c7e8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .kb-header p { color: var(--muted); font-size: 0.9rem; margin-top: 0.35rem; line-height: 1.5; }
+
+    /* Hub cards - glassmorphism */
+    .hub-card {
+      background: rgba(18, 24, 36, 0.55);
+      backdrop-filter: blur(var(--blur-md));
+      -webkit-backdrop-filter: blur(var(--blur-md));
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hub-card:hover {
+      border-color: rgba(91, 141, 239, 0.2);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+    .hub-card h4 {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+    .hub-card p, .hub-card li {
+      font-size: 0.9rem;
+      line-height: 1.65;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+    .hub-card ul { margin: 0.5rem 0 0 1.25rem; padding: 0; }
+    .hub-card .highlight {
+      font-weight: 600;
+      color: var(--success);
+    }
+    .hub-card.sales-offer {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(34, 197, 94, 0.02) 100%);
+      border-color: rgba(34, 197, 94, 0.2);
+    }
+    .fda-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.78rem;
+      padding: 0.4rem 0.85rem;
+      border-radius: 8px;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+    }
+
+    /* Post-GLP-1 battlecard */
+    .glp1-battlecard {
+      background: linear-gradient(145deg, rgba(139, 92, 246, 0.12) 0%, rgba(91, 141, 239, 0.08) 100%);
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-top: 1rem;
+      box-shadow: 0 4px 24px rgba(139, 92, 246, 0.1);
+    }
+    .glp1-battlecard h5 {
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #b8a9ff;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .glp1-battlecard .pitch-line {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.6rem;
+    }
+    .glp1-battlecard p { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+
+    .followups-layout { display: grid; grid-template-columns: 340px 1fr; gap: 1.25rem; min-height: 480px; }
+    .recent-calls-panel {
+      background: linear-gradient(145deg, rgba(24, 32, 50, 0.6), rgba(16, 22, 36, 0.8));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .recent-calls-panel h3 { padding: 1rem; font-size: 0.9rem; border-bottom: 1px solid var(--border); }
+    .call-item { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s ease; }
+    .call-item:hover { background: rgba(255, 255, 255, 0.03); }
+    .call-item .call-name { font-weight: 600; font-size: 0.9rem; }
+    .call-item .call-meta { font-size: 0.78rem; color: var(--muted); margin-top: 0.2rem; }
+    .email-drafter-panel {
+      background: linear-gradient(145deg, rgba(24, 32, 50, 0.6), rgba(16, 22, 36, 0.8));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .email-drafter-panel h3 { font-size: 0.95rem; margin-bottom: 0.25rem; }
+    .strategy-toggles { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .strategy-btn {
+      transition: transform 0.15s var(--ease-out);
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      text-align: left;
+      max-width: 100%;
+    }
+    .strategy-btn:hover { color: var(--text); border-color: rgba(91, 141, 239, 0.4); background: rgba(91, 141, 239, 0.08); }
+    .strategy-btn.active { color: var(--text); border-color: var(--accent); background: var(--accent-glow); box-shadow: 0 0 0 1px rgba(91, 141, 239, 0.2); }
+    .strategy-btn:active { transform: scale(0.97); }
+    .email-editor {
+      flex: 1;
+      min-height: 200px;
+      background: rgba(8, 12, 22, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      color: var(--text);
+      font-size: 0.88rem;
+      resize: vertical;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.2s ease;
+    }
+    .email-editor:focus { border-color: var(--accent); }
+    .email-actions { display: flex; justify-content: flex-end; gap: 0.75rem; }
+    .btn-send {
+      padding: 0.55rem 1.2rem;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .btn-send:hover { box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4); transform: translateY(-1px); }
+
+    .dialer-layout { display: grid; grid-template-columns: 1fr 320px; gap: 1.25rem; min-height: 420px; }
+    .dialpad-section {
+      background: linear-gradient(145deg, rgba(24, 32, 50, 0.6), rgba(16, 22, 36, 0.8));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+    .call-timer { font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); }
+    .call-timer.in-call { color: var(--success); }
+    .dialpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; max-width: 260px; }
+    .dial-btn {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: rgba(8, 12, 22, 0.6);
+      color: var(--text);
+      font-size: 1.35rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .dial-btn:hover { border-color: var(--accent); background: var(--accent-glow); transform: scale(1.05); }
+    .dial-btn.call-btn { grid-column: 2; background: linear-gradient(135deg, #22c55e, #16a34a); border-color: rgba(34, 197, 94, 0.5); color: white; }
+    .dial-btn.hangup-btn { grid-column: 2; background: linear-gradient(135deg, #ef4444, #dc2626); border-color: rgba(239, 68, 68, 0.5); color: white; }
+    .phone-display { width: 100%; max-width: 260px; padding: 0.75rem 1rem; background: rgba(8, 12, 22, 0.6); border: 1px solid var(--border); border-radius: 10px; font-size: 1.1rem; text-align: center; color: var(--text); }
+    .transcription-panel {
+      background: linear-gradient(145deg, rgba(24, 32, 50, 0.6), rgba(16, 22, 36, 0.8));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+    }
+    .transcription-panel h3 { font-size: 0.85rem; margin-bottom: 0.75rem; }
+    /* Call Autopsy — Post-Call UI */
+    .call-autopsy-panel {
+      background: rgba(12, 18, 28, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    }
+    .call-autopsy-notes {
+      min-height: 160px;
+      background: rgba(8, 12, 22, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      color: var(--text);
+      font-size: 0.88rem;
+      line-height: 1.6;
+      resize: vertical;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.2s ease;
+    }
+    .call-autopsy-notes::placeholder { color: rgba(139, 155, 180, 0.5); }
+    .call-autopsy-notes:focus { border-color: var(--accent); }
+    .btn-extract-bant {
+      padding: 0.65rem 1.25rem;
+      background: linear-gradient(135deg, rgba(91, 141, 239, 0.3), rgba(139, 92, 246, 0.2));
+      border: 1px solid rgba(91, 141, 239, 0.5);
+      border-radius: 10px;
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-extract-bant:hover {
+      background: linear-gradient(135deg, rgba(91, 141, 239, 0.4), rgba(139, 92, 246, 0.3));
+      box-shadow: 0 4px 16px rgba(91, 141, 239, 0.25);
+      transform: translateY(-1px);
+    }
+    .btn-extract-bant:active { transform: scale(0.97); }
+    .autopsy-output-card {
+      display: none;
+      background: rgba(18, 24, 36, 0.8);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(91, 141, 239, 0.2);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-top: 0.5rem;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      gap: 1rem;
+      flex-direction: column;
+    }
+    .autopsy-output-card.visible { display: flex; }
+    .autopsy-section { margin-bottom: 0.5rem; }
+    .autopsy-section:last-child { margin-bottom: 0; }
+    .autopsy-section-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+    .autopsy-section-content {
+      font-size: 0.88rem;
+      color: var(--text);
+      line-height: 1.6;
+      padding: 0.75rem;
+      background: rgba(8, 12, 22, 0.5);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .autopsy-section-content ul { margin: 0; padding-left: 1.25rem; }
+    .autopsy-section-content li { margin-bottom: 0.35rem; }
+
+    .transcription-scroll {
+      flex: 1;
+      min-height: 280px;
+      max-height: 320px;
+      overflow-y: auto;
+      background: rgba(8, 12, 22, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      font-size: 0.8rem;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+    .transcription-empty { color: var(--muted); font-size: 0.88rem; text-align: center; padding: 2rem; }
+
+    /*
+    ─── TOTAL RECALL: Prospect Drawer (slide-out on row click) ───
+    */
+    .prospect-drawer-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 5000;
+      pointer-events: none;
+    }
+    .prospect-drawer-overlay.open { pointer-events: auto; }
+    .prospect-drawer-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .prospect-drawer-overlay.open .prospect-drawer-backdrop {
+      opacity: 1;
+      visibility: visible;
+    }
+    .prospect-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 40%;
+      min-width: 320px;
+      max-width: 480px;
+      height: 100vh;
+      z-index: 5001;
+      background: rgba(14, 20, 36, 0.97);
+      backdrop-filter: blur(var(--blur-lg));
+      -webkit-backdrop-filter: blur(var(--blur-lg));
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: -16px 0 48px rgba(0, 0, 0, 0.4);
+      transform: translateX(100%);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .prospect-drawer-overlay.open .prospect-drawer {
+      transform: translateX(0);
+    }
+    .prospect-drawer-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-shrink: 0;
+    }
+    .prospect-drawer-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: all 0.2s ease;
+    }
+    .prospect-drawer-close:hover {
+      color: var(--text);
+      border-color: rgba(239, 68, 68, 0.4);
+      background: var(--danger-bg);
+    }
+    .prospect-drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .prospect-drawer-contact {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .prospect-drawer-contact .contact-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .prospect-drawer-contact .contact-detail {
+      font-size: 0.88rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .prospect-drawer-contact .contact-detail strong { color: var(--text); min-width: 70px; }
+    .prospect-drawer-notes-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 0.35rem;
+    }
+    .prospect-drawer-notes {
+      flex: 1;
+      min-height: 180px;
+      background: rgba(8, 12, 22, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      color: var(--text);
+      font-size: 0.88rem;
+      line-height: 1.6;
+      resize: vertical;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.2s ease;
+    }
+    .prospect-drawer-notes::placeholder { color: rgba(139, 155, 180, 0.5); }
+    .prospect-drawer-notes:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+    /*
+    ─── COMMAND PALETTE (Ctrl+K) ───
+    */
+    .command-palette-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 12vh 1rem 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(8px);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+    .command-palette-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+    .command-palette {
+      width: 100%;
+      max-width: 560px;
+      background: rgba(14, 20, 36, 0.95);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      box-shadow: var(--shadow-elevated), 0 0 0 1px rgba(91, 141, 239, 0.12);
+      overflow: hidden;
+    }
+    .command-palette-input-wrap {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .command-palette-input {
+      width: 100%;
+      background: rgba(8, 12, 22, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem 1rem 0.85rem 2.75rem;
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%238b9bb4' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: 1rem center;
+    }
+    .command-palette-input::placeholder { color: rgba(139, 155, 180, 0.6); }
+    .command-palette-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .command-palette-results {
+      max-height: 340px;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+    .command-palette-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.15s ease, box-shadow 0.15s ease;
+      color: var(--text);
+    }
+    .command-palette-item:hover,
+    .command-palette-item.highlighted {
+      background: rgba(91, 141, 239, 0.15);
+      box-shadow: inset 0 0 0 1px rgba(91, 141, 239, 0.25);
+    }
+    .command-palette-item .cmd-icon { font-size: 1.1rem; opacity: 0.9; }
+    .command-palette-item .cmd-desc { font-size: 0.78rem; color: var(--muted); margin-left: auto; }
+    .command-palette-section { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); padding: 0.6rem 1rem 0.3rem; }
+
+    /* Power Hour */
+    .power-hour-toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-right: 0.5rem;
+    }
+    .power-hour-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      background: rgba(8, 12, 22, 0.5);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .power-hour-toggle:hover { color: var(--text); border-color: rgba(234, 179, 8, 0.5); }
+    .power-hour-toggle.active {
+      color: #fbbf24;
+      border-color: rgba(251, 191, 36, 0.5);
+      background: rgba(251, 191, 36, 0.1);
+      box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);
+    }
+    .power-hour-countdown {
+      display: none;
+      font-variant-numeric: tabular-nums;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fbbf24;
+      text-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+      letter-spacing: 0.02em;
+      margin-left: 0.5rem;
+    }
+    .power-hour-countdown.visible { display: inline-block; }
+    .power-hour-mode .sidebar,
+    .power-hour-mode .kpi-row,
+    .power-hour-mode .quick-add-card,
+    .power-hour-mode .pipeline-toolbar,
+    .power-hour-mode .table-card,
+    .power-hour-mode .ai-widget {
+      opacity: 0.15;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+    .power-hour-mode .power-hour-split {
+      display: grid !important;
+    }
+    .power-hour-split {
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      min-height: 70vh;
+      margin-top: 1rem;
+    }
+    .power-hour-split .dialer-box,
+    .power-hour-split .followups-box {
+      background: linear-gradient(145deg, rgba(24, 32, 50, 0.7), rgba(16, 22, 36, 0.9));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    .power-hour-split > .view {
+      display: flex !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      position: relative !important;
+      min-height: 0;
+      flex-direction: column;
+    }
+    .power-hour-split .dialer-layout,
+    .power-hour-split .followups-layout { flex: 1; min-height: 0; }
+
+    /* Heat Score & Success Pulse */
+    .heat-score {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 40px;
+      padding: 0.35rem 0.6rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .heat-score.hot { background: rgba(34, 197, 94, 0.2); color: var(--success); }
+    .heat-score.warm { background: rgba(234, 179, 8, 0.2); color: var(--warning); }
+    .heat-score.cool { background: rgba(59, 130, 246, 0.2); color: var(--info); }
+    .heat-score.cold { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+    @keyframes successPulse {
+      0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); background: rgba(34, 197, 94, 0.08); }
+      50% { box-shadow: 0 0 24px 8px rgba(34, 197, 94, 0.25); background: rgba(34, 197, 94, 0.12); }
+      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); background: transparent; }
+    }
+    tr.success-pulse td {
+      animation: successPulse 1.2s ease-out forwards;
+    }
+
+    .ai-widget {
+      background: linear-gradient(180deg, rgba(14, 22, 36, 0.98) 0%, rgba(10, 16, 28, 0.98) 100%);
+      border-left: 1px solid var(--border);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      overflow-y: auto;
+      transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.35s ease;
+    }
+    .app-layout.kb-view-active .ai-widget,
+    .app-layout.dialer-view-active .ai-widget,
+    .app-layout.followups-view-active .ai-widget {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .ai-widget-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem; }
+    .ai-widget-header h3 { font-size: 0.95rem; font-weight: 700; }
+    .ai-widget-header .pill { font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 6px; background: rgba(34, 197, 94, 0.2); color: var(--success); }
+    .ai-transcript-area { background: rgba(8, 12, 22, 0.6); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; min-height: 140px; font-size: 0.8rem; color: var(--muted); resize: vertical; outline: none; transition: border-color 0.2s ease; }
+    .ai-transcript-area::placeholder { color: rgba(139, 155, 180, 0.4); }
+    .ai-transcript-area:focus { border-color: var(--accent); }
+    .ai-analyze-btn { width: 100%; padding: 0.65rem 1rem; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; border-radius: 10px; color: white; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .ai-analyze-btn:hover { box-shadow: 0 4px 20px rgba(59, 130, 246, 0.35); transform: translateY(-1px); }
+    .ai-analyze-btn:active { transform: translateY(0) scale(0.98); }
+    .ai-output { background: rgba(8, 12, 22, 0.5); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; font-size: 0.82rem; color: var(--muted); line-height: 1.6; min-height: 120px; }
+    .ai-output-title { font-size: 0.75rem; font-weight: 600; color: var(--accent); margin-bottom: 0.5rem; }
+
+    .power-hour-mode .app-layout { grid-template-columns: 0 1fr; }
+    .power-hour-mode .sidebar { width: 0; min-width: 0; overflow: hidden; padding: 0; border: none; }
+
+    @media (max-width: 1200px) { .app-layout { grid-template-columns: 240px 1fr; } .ai-widget { display: none; } }
+    @media (max-width: 900px) {
+      .app-layout { grid-template-columns: 1fr; }
+      .sidebar { flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--border); }
+      .quick-add-form { flex-direction: column; }
+      .quick-add-form .field { min-width: 100%; }
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .followups-layout { grid-template-columns: 1fr; }
+      .dialer-layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- TOTAL RECALL — Prospect Drawer (slides from right on row click) -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div class="prospect-drawer-overlay" id="prospectDrawerOverlay">
+    <div class="prospect-drawer-backdrop" id="prospectDrawerBackdrop"></div>
+    <div class="prospect-drawer" id="prospectDrawer">
+      <div class="prospect-drawer-header">
+        <h3 style="font-size:0.9rem;font-weight:700;color:var(--muted);">Prospect Details</h3>
+        <button class="prospect-drawer-close" id="prospectDrawerClose" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="prospect-drawer-body">
+        <div class="prospect-drawer-contact" id="prospectDrawerContact"></div>
+        <div>
+          <div class="prospect-drawer-notes-label">Deep Context / Notes</div>
+          <textarea class="prospect-drawer-notes" id="prospectDrawerNotes" placeholder="Hyper-specific details (e.g. 'Ate tacos on Tuesday', 'Prefers morning calls', 'Budget Q3')..."></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- COMMAND PALETTE (Ctrl+K) — Search commands & contacts          -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div class="command-palette-overlay" id="commandPaletteOverlay">
+    <div class="command-palette">
+      <div class="command-palette-input-wrap">
+        <input type="text" class="command-palette-input" id="commandPaletteInput" placeholder="Search commands, contacts..." autocomplete="off">
+      </div>
+      <div class="command-palette-results" id="commandPaletteResults"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- MAIN APP LAYOUT — Sidebar | Content | AI Widget                -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <div class="app-layout" id="appLayout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Artemis CRM</h1>
+        <p>Intelligence Terminal</p>
+      </div>
+      <span class="nav-label">Navigation</span>
+      <button class="nav-tab active" data-view="pipeline">📊 Pipeline Dashboard</button>
+      <button class="nav-tab" data-view="dialer">📞 AI Dialer (Beta) <span class="badge">Beta</span></button>
+      <button class="nav-tab" data-view="followups">⏰ Smart Follow-Ups</button>
+      <button class="nav-tab" data-view="kb">📚 Artemis Knowledge Base</button>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div>
+          <h2 id="viewTitle">Pipeline Dashboard</h2>
+          <p id="viewSubtitle">Track outreach, qualification, and meeting readiness.</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+          <div class="power-hour-toggle-wrap">
+            <button class="power-hour-toggle" id="powerHourToggle" type="button">⚡ Power Hour</button>
+            <span class="power-hour-countdown" id="powerHourCountdown">44:00</span>
+          </div>
+          <div class="notif-wrap">
+          <button class="notif-btn" id="notifButton" aria-label="Notifications">
+            <span class="notif-count" aria-hidden="true"></span>
+            <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M12 4.25a4 4 0 00-4 4v2.2c0 .7-.22 1.38-.64 1.95L5.5 14.9v1.35h13v-1.35l-1.86-2.5a3.3 3.3 0 01-.64-1.95v-2.2a4 4 0 00-4-4zM9.8 18a2.2 2.2 0 004.4 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="notif-menu" id="notifMenu">
+            <h3>Notifications</h3>
+            <div class="notif-item">2 prospects marked Qualified in the last hour.</div>
+            <div class="notif-item">Reminder: Follow up with Noor Industries at 4:30 PM.</div>
+            <div class="notif-item">Artemis Knowledge Base updated.</div>
+          </div>
+        </div>
+        </div>
+      </header>
+
+      <!-- ─── PIPELINE DASHBOARD ─── -->
+      <div id="pipeline" class="view active">
+        <div class="pipeline-toolbar">
+          <input type="text" class="search-bar" id="searchPipeline" placeholder="Search Pipeline..." autocomplete="off">
+          <label class="btn-import" for="csvFileInput">Import CSV</label>
+          <input type="file" id="csvFileInput" accept=".csv" style="display:none">
+          <button type="button" class="btn-export" id="exportCsvBtn">Export CSV</button>
+        </div>
+        <div class="kpi-row">
+          <div class="kpi-card accent"><div class="kpi-label">Total Contacts</div><div class="kpi-value" id="kpiTotal">0</div></div>
+          <div class="kpi-card success"><div class="kpi-label">Meetings Booked</div><div class="kpi-value" id="kpiBooked">0</div></div>
+          <div class="kpi-card warning"><div class="kpi-label">Pipeline Value</div><div class="kpi-value" id="kpiPipeline">$0</div></div>
+          <div class="kpi-card info"><div class="kpi-label">Qualified</div><div class="kpi-value" id="kpiQualified">0</div></div>
+        </div>
+        <section class="quick-add-card">
+          <div class="quick-add-title">Quick Add Contact</div>
+          <form class="quick-add-form" id="contactForm">
+            <div class="field"><label for="name">Name</label><input id="name" type="text" placeholder="Jordan Lee"></div>
+            <div class="field"><label for="email">Email</label><input id="email" type="email" placeholder="jordan@company.com"></div>
+            <div class="field"><label for="hq">HQ</label><input id="hq" type="text" placeholder="Austin, TX"></div>
+            <div class="field"><label for="direct">Direct</label><input id="direct" type="tel" placeholder="+1 (512) 555-0172"></div>
+            <div class="field"><label for="mobile">Mobile</label><input id="mobile" type="tel" placeholder="+1 (512) 555-0119"></div>
+            <button class="btn-add" type="submit">Add Contact</button>
+          </form>
+        </section>
+        <div class="power-hour-split" id="powerHourSplit"></div>
+        <section class="table-card" id="contactListCard">
+          <h3>Contact List</h3>
+          <div class="empty-state" id="emptyState">
+            <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <h4>No contacts yet</h4>
+            <p>Import a CSV or add one manually to get started.</p>
+            <div class="empty-state-actions"><label class="btn-import" for="csvFileInput">Import CSV</label></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th><th>Email</th><th>HQ</th><th>Direct</th><th>Mobile</th><th>Status</th><th>Heat</th>
+                  <th style="width:48px"></th>
+                </tr>
+              </thead>
+              <tbody id="contactTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- ─── AI DIALER & POST-CALL AUTOPSY ─── -->
+      <div id="dialer" class="view">
+        <div class="dialer-layout">
+          <div class="dialpad-section">
+            <div class="call-timer" id="callTimer">00:00</div>
+            <input type="text" class="phone-display" id="phoneDisplay" placeholder="Enter number...">
+            <div class="dialpad">
+              <button class="dial-btn" data-digit="1">1</button><button class="dial-btn" data-digit="2">2</button><button class="dial-btn" data-digit="3">3</button>
+              <button class="dial-btn" data-digit="4">4</button><button class="dial-btn" data-digit="5">5</button><button class="dial-btn" data-digit="6">6</button>
+              <button class="dial-btn" data-digit="7">7</button><button class="dial-btn" data-digit="8">8</button><button class="dial-btn" data-digit="9">9</button>
+              <button class="dial-btn" data-digit="*">*</button><button class="dial-btn" data-digit="0">0</button><button class="dial-btn" data-digit="#">#</button>
+              <button class="dial-btn call-btn" id="dialCallBtn">📞</button>
+              <button class="dial-btn hangup-btn" id="dialHangupBtn" style="display:none">📴</button>
+            </div>
+          </div>
+          <div class="call-autopsy-panel transcription-panel">
+            <h3>Post-Call Autopsy</h3>
+            <p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.25rem;">Dump raw call notes below, then extract BANT & action items.</p>
+            <textarea class="call-autopsy-notes" id="callAutopsyNotes" placeholder="Paste or type call notes here... e.g.&#10;- Budget approved for Q3, ~$50K&#10;- Need to speak with medical director&#10;- Follow up Thursday 2pm"> </textarea>
+            <button type="button" class="btn-extract-bant" id="extractBantBtn">Extract BANT & Action Items</button>
+            <div class="autopsy-output-card" id="autopsyOutputCard">
+              <div class="autopsy-section">
+                <div class="autopsy-section-title">Identified Needs</div>
+                <div class="autopsy-section-content" id="autopsyNeeds"></div>
+              </div>
+              <div class="autopsy-section">
+                <div class="autopsy-section-title">Next Steps</div>
+                <div class="autopsy-section-content" id="autopsyNextSteps"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── SMART FOLLOW-UPS / ARTEMIS MATRIX EMAIL ─── -->
+      <div id="followups" class="view">
+        <div class="followups-layout">
+          <div class="recent-calls-panel">
+            <h3>Recent Calls</h3>
+            <div id="recentCallsList"></div>
+            <div class="transcription-empty" id="recentCallsEmpty" style="display:none; padding:1.5rem; font-size:0.85rem">No contacts yet. Add or import contacts to see them here.</div>
+          </div>
+          <div class="email-drafter-panel">
+            <h3>Artemis Matrix Email Generator</h3>
+            <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 0.5rem;">Select a contact above, choose strategy, then edit and send. First name & company auto-filled.</p>
+            <div class="strategy-toggles">
+              <button class="strategy-btn active" data-strategy="founder">T-Shape 2 Founder Pitch</button>
+              <button class="strategy-btn" data-strategy="glp1">NeoGen GLP-1 Pitch</button>
+              <button class="strategy-btn" data-strategy="breakup">The Break-Up</button>
+            </div>
+            <textarea class="email-editor" id="emailEditor" placeholder="Hi [Name],&#10;&#10;..."> </textarea>
+            <div class="email-actions"><button class="btn-send" id="sendEmailBtn">Send</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── OMNISCIENT KNOWLEDGE BASE ─── -->
+      <div id="kb" class="view">
+        <div class="kb-view">
+          <div class="kb-header">
+            <h2>Omniscient Knowledge Base</h2>
+            <p>Sleek, multi-tabbed clinical reference guides for discovery calls. Switch tabs instantly—no page reload.</p>
+          </div>
+          <div class="kb-subnav">
+            <button class="kb-subtab active" data-kb="tshape2">T-Shape 2 Clinical Hub</button>
+            <button class="kb-subtab" data-kb="neogen">NeoGen Plasma Hub</button>
+          </div>
+
+          <div id="kb-tshape2" class="kb-section active">
+            <div class="hub-card">
+              <h4>Core Technology</h4>
+              <p>T-Shape 2 combines <strong>radiofrequency</strong>, <strong>vacuum aspiration</strong>, <strong>low-level laser therapy (LLLT)</strong>, and <strong>mesospheric activation</strong> in a single platform—delivering multi-modality energy to target tissue for body contouring, cellulite reduction, and skin toning.</p>
+            </div>
+            <div class="hub-card">
+              <h4>Clinical Specs</h4>
+              <ul>
+                <li><strong>LLLT wavelength:</strong> 635–660 nm (red spectrum), 808 nm (near-infrared) — penetrates dermis/subcutaneous tissue</li>
+                <li><strong>RF energy:</strong> Bipolar RF, 0.5–2 MHz, controlled thermal elevation to 40–42°C</li>
+                <li><strong>Vacuum:</strong> Programmable negative pressure (20–80 kPa) for tissue mobilization</li>
+                <li><strong>Treatment area:</strong> Abdomen, thighs, buttocks, arms — typical session 30–45 min</li>
+              </ul>
+              <p><strong>Contraindications:</strong> Pregnancy, active cancer, cardiac pacemaker/ICD, metal implants in treatment zone, bleeding disorders, photosensitivity disorders, open wounds or infection at treatment site. Not for use on face or neck.</p>
+            </div>
+            <div class="hub-card">
+              <h4>Validation & Clinical Outcomes</h4>
+              <p><span class="fda-badge">✓ FDA Class II Cleared Medical Device</span></p>
+              <p><span class="highlight">2 cm average reduction</span> in abdominal circumference.</p>
+              <p><span class="highlight">23% improvement</span> in muscle-to-fat ratio.</p>
+              <p>Non-invasive with minimal downtime—treatments typically require no recovery period.</p>
+            </div>
+            <div class="hub-card">
+              <h4>Financial ROI Breakdown</h4>
+              <p><strong>Avg treatment package price:</strong> $350–$600 per session. Typical 6-session package: $2,100–$3,600.</p>
+              <p><strong>Consumables:</strong> Minimal — handpieces reusable; gel/sliders low-cost. Est. consumable cost per treatment: $5–$15.</p>
+              <p><strong>Volume:</strong> 3–5 treatments/day per device achievable. At 4 tx/day × $450 avg × 22 days = <strong>~$39,600/month</strong> potential revenue per device.</p>
+            </div>
+            <div class="hub-card">
+              <h4>Ideal Patient Profiles</h4>
+              <ul>
+                <li><strong>Demographics:</strong> Women 30–55, BMI 22–32, seeking non-surgical body shaping</li>
+                <li><strong>Pain points:</strong> Post-pregnancy abdomen, "orange peel" cellulite, stubborn fat resistant to diet/exercise</li>
+                <li><strong>Discovery cue:</strong> "Are you seeing patients who want body contouring without surgery or long downtime?"</li>
+                <li><strong>Avoid:</strong> Obese patients (BMI &gt;35), those expecting liposuction-level results</li>
+              </ul>
+            </div>
+            <div class="hub-card sales-offer">
+              <h4>Sales Offer — Founder Partner Program</h4>
+              <p>Artemis covers the <strong>$1,400 monthly device payment</strong> in exchange for <strong>5 hours per month</strong> of influencer and client treatments. Practices gain zero-capital access to the platform while building case studies and testimonials.</p>
+              <p>Lead with: "What if we removed the monthly payment altogether—would that change how you'd think about adding body contouring?"</p>
+            </div>
+          </div>
+
+          <div id="kb-neogen" class="kb-section">
+            <div class="hub-card">
+              <h4>Core Technology</h4>
+              <p>NeoGen Plasma uses <strong>nitrogen plasma</strong> technology and is an <strong>FDA-Cleared Class II Medical Device</strong>. It treats <strong>100% of the skin's architecture</strong> (dermis and deeper layers) while keeping the <strong>epidermis entirely intact</strong>—delivering safer healing, less scarring, and faster recovery.</p>
+            </div>
+            <div class="hub-card">
+              <h4>Clinical Specs</h4>
+              <ul>
+                <li><strong>Technology:</strong> Nitrogen plasma RF — ionized gas creates controlled thermal effect in dermis</li>
+                <li><strong>Energy output:</strong> Sub-ablative, dermal heating 45–55°C; epidermis spared</li>
+                <li><strong>Indications:</strong> Skin tightening, resurfacing, facial rejuvenation, post-GLP-1 laxity, acne scarring</li>
+                <li><strong>Treatment depth:</strong> 0.2–2 mm (dermis); adjustable based on handpiece/parameters</li>
+              </ul>
+              <p><strong>Contraindications:</strong> Pregnancy, active infection/herpes at site, keloid tendency, immunosuppression, recent isotretinoin (within 6–12 months), active rosacea flare. Use caution in darker Fitzpatrick types (IV–VI)—test patch recommended.</p>
+            </div>
+            <div class="hub-card">
+              <h4>Validation & Outcomes</h4>
+              <p><span class="fda-badge">✓ FDA Class II Cleared</span></p>
+              <p>Clinically shown to increase skin density by <strong class="highlight">80%</strong>. Downtime: <strong>2–5 days</strong>. No ablative destruction—epidermis remains intact for safer, faster healing.</p>
+            </div>
+            <div class="hub-card">
+              <h4>Financial ROI Breakdown</h4>
+              <p><strong>Face & neck avg package:</strong> $1,200–$2,500 (typically 1–2 sessions). Full-face single session: $800–$1,500.</p>
+              <p><strong>Consumables:</strong> Nitrogen cartridges, treatment tips. Est. consumable cost per treatment: $25–$75.</p>
+              <p><strong>Volume:</strong> High-margin add-on to existing practice. At 2 treatments/day × $1,200 avg × 22 days = <strong>~$52,800/month</strong> potential revenue.</p>
+            </div>
+            <div class="hub-card">
+              <h4>Ideal Patient Profiles</h4>
+              <ul>
+                <li><strong>Demographics:</strong> Women/men 40–65, post-weight-loss patients, those seeking non-surgical facelift</li>
+                <li><strong>Pain points:</strong> Loose skin post-Ozempic/Wegovy, facial hollowing, neck laxity, mild-to-moderate skin laxity</li>
+                <li><strong>Discovery cue:</strong> "With GLP-1 use exploding, are your clients asking about loose skin and facial volume loss?"</li>
+                <li><strong>Sweet spot:</strong> 6–18 months post significant weight loss; patients who want improvement without surgery</li>
+              </ul>
+            </div>
+            <div class="glp1-battlecard">
+              <h5>Post-Weight-Loss Battlecard — The GLP-1 Pitch</h5>
+              <p class="pitch-line">As GLP-1 (Ozempic, Wegovy) use scales, patients suffer from rapid fat loss that depletes collagen and leads to facial hollowing and loose skin.</p>
+              <p><strong>Opening line:</strong> "With Ozempic and Wegovy driving major weight loss, are your clients asking about loose skin and facial volume loss? Rapid fat loss depletes collagen—NeoGen is built to restore what GLP-1 taketh away."</p>
+              <p>Position NeoGen Plasma as the <strong>ultimate solution</strong> for restoring volume loss and facial hollowing post–weight loss. Lead with the post-GLP-1 pain point and close with clinical density results (80% increase).</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+
+    <aside class="ai-widget">
+      <div class="ai-widget-header"><h3>AI Call Analysis</h3><span class="pill">Ready</span></div>
+      <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 0.25rem;">Paste transcript or notes below for instant coaching feedback.</p>
+      <textarea class="ai-transcript-area" placeholder="Paste call transcript here..." rows="6"></textarea>
+      <button class="ai-analyze-btn">Analyze & Get Coaching Tips</button>
+      <div class="ai-output"><div class="ai-output-title">Coaching Tips</div>Analysis will appear here — talk ratio, objection handling notes, discovery questions to ask, and suggested next steps.</div>
+    </aside>
+  </div>
+
+  <script>
+    /*
+     * ═══════════════════════════════════════════════════════════════════════════
+     * ARTEMIS INTELLIGENCE TERMINAL — Main Application Script
+     * Modular structure for maintainability. Sections: DATA | UI | EVENTS | FEATURES
+     * ═══════════════════════════════════════════════════════════════════════════
+     */
+
+    // --- CONSTANTS & CONFIG ---
+    const STORAGE_KEY = 'artemis_contacts';
+    const NOTES_PREFIX = 'artemis_notes_';
+    const AUTOPSY_KEY = 'artemis_last_autopsy';
+    const STATUS_LABELS = { booked: 'Booked', qualified: 'Qualified', 'no-show': 'No-Show', 'follow-up': 'Follow-up' };
+    const HEAT_SCORES = { booked: 100, qualified: 75, 'follow-up': 50, 'no-show': 10 };
+    let contacts = [];
+    let searchQuery = '';
+    let selectedFollowupContact = null;
+
+    // --- DATA HANDLING (localStorage, contacts, CSV) ---
+    function safeGetStorage(key) { try { return localStorage.getItem(key); } catch(e) { return null; } }
+    function safeSetStorage(key, val) { try { localStorage.setItem(key, val); return true; } catch(e) { return false; } }
+    function loadContacts() { try { const stored = safeGetStorage(STORAGE_KEY); contacts = (stored ? JSON.parse(stored) : []) || []; ensureContactsHaveIds(); } catch(e) { contacts = []; } }
+    function saveContacts() { safeSetStorage(STORAGE_KEY, JSON.stringify(contacts)); }
+    function genId() { return 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 9); }
+    function ensureContactsHaveIds() { let changed = false; contacts.forEach(c => { if (!c.id) { c.id = genId(); changed = true; } }); if (changed) saveContacts(); }
+    function getHeatScore(status) { return HEAT_SCORES[status] ?? 25; }
+    function matchesSearch(c, q) { if (!q || !q.trim()) return true; const t = q.trim().toLowerCase(); return (c.name||'').toLowerCase().includes(t) || (c.email||'').toLowerCase().includes(t) || (c.hq||'').toLowerCase().includes(t) || (c.email||'').split('@')[1]?.toLowerCase().includes(t); }
+
+    // --- PIPELINE & CONTACT UI ---
+    function getHeatClass(score) {
+      if (score >= 90) return 'hot';
+      if (score >= 60) return 'warm';
+      if (score >= 30) return 'cool';
+      return 'cold';
+    }
+
+    function renderContactRow(c, index) {
+      const tr = document.createElement('tr');
+      tr.className = 'pipeline-row';
+      tr.dataset.status = c.status;
+      tr.dataset.index = index;
+      tr.dataset.contactId = c.id || (c.id = genId());
+      const heat = getHeatScore(c.status);
+      const heatClass = getHeatClass(heat);
+      const opts = ['booked','qualified','no-show','follow-up'].map(s => `<span class="status-option" data-status="${s}">${STATUS_LABELS[s]}</span>`).join('');
+      tr.innerHTML = `<td>${c.name}</td><td>${c.email}</td><td>${c.hq || '—'}</td><td>${c.direct || '—'}</td><td>${c.mobile || '—'}</td><td><div class="status-dropdown"><span class="status-badge ${c.status}">${STATUS_LABELS[c.status]}</span><div class="status-dropdown-menu">${opts}</div></div></td><td><span class="heat-score ${heatClass}">${heat}</span></td><td><button type="button" class="btn-delete" aria-label="Delete">🗑️</button></td>`;
+      const dd = tr.querySelector('.status-dropdown'); const badge = dd.querySelector('.status-badge'); const menu = dd.querySelector('.status-dropdown-menu'); const heatEl = tr.querySelector('.heat-score');
+      badge.addEventListener('click', (e) => { e.stopPropagation(); document.querySelectorAll('.status-dropdown-menu').forEach(m => { if (m !== menu) m.classList.remove('open'); }); menu.classList.toggle('open'); });
+      dd.querySelectorAll('.status-option').forEach(opt => { opt.addEventListener('click', (e) => { e.stopPropagation(); const s = opt.dataset.status; contacts[index].status = s; saveContacts(); updateKPIs(); badge.textContent = STATUS_LABELS[s]; badge.className = 'status-badge ' + s; tr.dataset.status = s; const newHeat = getHeatScore(s); heatEl.textContent = newHeat; heatEl.className = 'heat-score ' + getHeatClass(newHeat); menu.classList.remove('open'); if (s === 'booked') { tr.classList.remove('success-pulse'); void tr.offsetWidth; tr.classList.add('success-pulse'); setTimeout(() => tr.classList.remove('success-pulse'), 1200); } }); });
+      tr.querySelector('.btn-delete').addEventListener('click', (e) => { e.stopPropagation(); contacts.splice(index, 1); saveContacts(); updateKPIs(); renderContacts(); renderRecentCalls(); });
+      tr.addEventListener('click', (e) => { if (e.target.closest('.status-dropdown') || e.target.closest('.btn-delete')) return; openProspectDrawer(c); });
+      return tr;
+    }
+
+    function openProspectDrawer(c) {
+      const overlay = document.getElementById('prospectDrawerOverlay');
+      const contactEl = document.getElementById('prospectDrawerContact');
+      const notesEl = document.getElementById('prospectDrawerNotes');
+      const cid = c.id || (c.id = genId());
+      contactEl.innerHTML = `<div class="contact-name">${c.name}</div><div class="contact-detail"><strong>Email</strong> ${c.email || '—'}</div><div class="contact-detail"><strong>HQ</strong> ${c.hq || '—'}</div><div class="contact-detail"><strong>Direct</strong> ${c.direct || '—'}</div><div class="contact-detail"><strong>Mobile</strong> ${c.mobile || '—'}</div><div class="contact-detail"><strong>Status</strong> ${STATUS_LABELS[c.status] || c.status}</div>`;
+      try { notesEl.value = safeGetStorage(NOTES_PREFIX + cid) || ''; } catch(_) { notesEl.value = ''; }
+      notesEl.dataset.contactId = cid;
+      notesEl.oninput = () => { try { safeSetStorage(NOTES_PREFIX + notesEl.dataset.contactId, notesEl.value); } catch(_) {} };
+      overlay.classList.add('open');
+    }
+
+    function closeProspectDrawer() {
+      document.getElementById('prospectDrawerOverlay').classList.remove('open');
+    }
+
+    document.getElementById('prospectDrawerClose').addEventListener('click', closeProspectDrawer);
+    document.getElementById('prospectDrawerBackdrop').addEventListener('click', closeProspectDrawer);
+
+    function updateKPIs() {
+      const total = contacts.length;
+      const booked = contacts.filter(c => c.status === 'booked').length;
+      const qualified = contacts.filter(c => c.status === 'qualified').length;
+      const pv = total * 100000;
+      const fmt = n => n >= 1000000 ? (n/1e6).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(0)+'K' : String(n);
+      document.getElementById('kpiTotal').textContent = total;
+      document.getElementById('kpiBooked').textContent = booked;
+      document.getElementById('kpiPipeline').textContent = '$' + fmt(pv);
+      document.getElementById('kpiQualified').textContent = qualified;
+    }
+
+    function renderRecentCalls() {
+      const list = document.getElementById('recentCallsList');
+      const empty = document.getElementById('recentCallsEmpty');
+      list.innerHTML = '';
+      if (contacts.length === 0) { empty.style.display = 'block'; return; }
+      empty.style.display = 'none';
+      contacts.slice(0, 20).forEach(c => {
+        const item = document.createElement('div');
+        item.className = 'call-item';
+        item.dataset.contact = c.name;
+        item.innerHTML = `<div class="call-name">${c.name}</div><div class="call-meta">${c.email || ''}</div>`;
+        item.addEventListener('click', () => {
+          document.querySelectorAll('.call-item').forEach(el => el.style.background = '');
+          item.style.background = 'rgba(91, 141, 239, 0.15)';
+          selectedFollowupContact = c;
+          applyEmailStrategy(c);
+        });
+        list.appendChild(item);
+      });
+    }
+
+    function renderContacts() {
+      const tbody = document.getElementById('contactTableBody');
+      const emptyState = document.getElementById('emptyState');
+      const card = document.getElementById('contactListCard');
+      tbody.innerHTML = '';
+      const filtered = contacts.filter(c => matchesSearch(c, searchQuery));
+      const sorted = [...filtered].sort((a, b) => getHeatScore(b.status) - getHeatScore(a.status));
+      sorted.forEach(c => { const idx = contacts.indexOf(c); if (idx >= 0) tbody.appendChild(renderContactRow(c, idx)); });
+      const has = contacts.length > 0; const matches = filtered.length > 0;
+      const showEmpty = !has || (has && !matches);
+      card.classList.toggle('has-content', has && matches);
+      emptyState.classList.toggle('visible', showEmpty);
+      const p = emptyState.querySelector('p');
+      if (p) p.textContent = has && !matches ? 'No contacts match your search. Try a different term.' : 'Import a CSV or add one manually to get started.';
+      updateKPIs();
+      renderRecentCalls();
+    }
+
+    // --- VIEW SWITCHING & NAVIGATION ---
+    const viewTitles = { pipeline: { title: 'Pipeline Dashboard', subtitle: 'Track outreach, qualification, and meeting readiness.' }, dialer: { title: 'AI Dialer (Beta)', subtitle: 'One-click power dialing with AI-assisted scripts.' }, followups: { title: 'Smart Follow-Ups', subtitle: 'Automated sequence suggestions based on engagement signals.' }, kb: { title: 'Omniscient Knowledge Base', subtitle: 'Multi-tabbed clinical reference guides for discovery calls.' } };
+    const appLayout = document.querySelector('.app-layout');
+
+    function switchView(viewId) {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.nav-tab[data-view="${viewId}"]`)?.classList.add('active');
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+      document.getElementById('viewTitle').textContent = viewTitles[viewId].title;
+      document.getElementById('viewSubtitle').textContent = viewTitles[viewId].subtitle;
+      appLayout.classList.remove('kb-view-active', 'dialer-view-active', 'followups-view-active');
+      if (viewId !== 'pipeline') appLayout.classList.add(viewId === 'kb' ? 'kb-view-active' : viewId === 'dialer' ? 'dialer-view-active' : 'followups-view-active');
+      if (viewId === 'followups') renderRecentCalls();
+      if (viewId === 'dialer') {
+        try {
+          const last = safeGetStorage(AUTOPSY_KEY);
+          if (last) { const d = JSON.parse(last); if (d.notes) document.getElementById('callAutopsyNotes').value = d.notes; }
+        } catch(_) {}
+      }
+    }
+
+    document.querySelectorAll('.nav-tab').forEach(tab => { tab.addEventListener('click', () => { if (powerHourActive) return; switchView(tab.dataset.view); }); });
+    document.addEventListener('click', e => { if (!e.target.closest('.status-dropdown')) document.querySelectorAll('.status-dropdown-menu').forEach(m => m.classList.remove('open')); });
+
+    // --- FORM HANDLERS & CSV ---
+    document.getElementById('contactForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const hq = document.getElementById('hq').value.trim();
+      const direct = document.getElementById('direct').value.trim();
+      const mobile = document.getElementById('mobile').value.trim();
+      if (!name || !email) return;
+      contacts.unshift({ id: genId(), name, email, hq, direct, mobile, status: 'follow-up' });
+      saveContacts();
+      renderContacts();
+      document.getElementById('contactForm').reset();
+    });
+
+    function parseCSVLine(line) { const out = []; let cur = ''; let inq = false; for (let i = 0; i < line.length; i++) { const c = line[i]; if (c === '"') { inq = !inq; continue; } if ((c === ',' || c === '\t') && !inq) { out.push(cur.trim()); cur = ''; continue; } cur += c; } out.push(cur.trim()); return out; }
+    function parseCSV(text) {
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length === 0) return [];
+      const parseCell = v => (v || '').trim().replace(/^["']|["']$/g, '');
+      const header = parseCSVLine(lines[0]).map(h => parseCell(h).toLowerCase());
+      const findCol = keys => { for (const k of keys) { const i = header.findIndex(h => h.includes(k.toLowerCase())); if (i >= 0) return i; } return -1; };
+      const nc = findCol(['name']) >= 0 ? findCol(['name']) : 0, ec = findCol(['email']) >= 0 ? findCol(['email']) : 1, hc = findCol(['hq','headquarter']) >= 0 ? findCol(['hq','headquarter']) : 2, dc = findCol(['direct','phone']) >= 0 ? findCol(['direct','phone']) : 3, mc = findCol(['mobile','cell']) >= 0 ? findCol(['mobile','cell']) : 4;
+      const rows = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cells = parseCSVLine(lines[i]).map(c => parseCell(c));
+        if (cells.length < 2) continue;
+        const name = parseCell(cells[nc]) || parseCell(cells[0]);
+        const email = parseCell(cells[ec]) || parseCell(cells[1]);
+        if (!name && !email) continue;
+        rows.push({ id: genId(), name: name || 'Unknown', email: email || '', hq: parseCell(cells[hc]) || '', direct: parseCell(cells[dc]) || '', mobile: parseCell(cells[mc]) || '', status: 'follow-up' });
+      }
+      return rows;
+    }
+
+    document.getElementById('searchPipeline').addEventListener('input', e => { searchQuery = e.target.value; renderContacts(); });
+    document.getElementById('csvFileInput').addEventListener('change', e => {
+      const f = e.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => { try { const rows = parseCSV(r.result); if (rows.length === 0) { alert('No valid rows found.'); return; } contacts.push(...rows); saveContacts(); renderContacts(); alert(`Imported ${rows.length} contact(s).`); } catch(err) { alert('Error parsing CSV'); } };
+      r.readAsText(f);
+      e.target.value = '';
+    });
+
+    document.getElementById('exportCsvBtn').addEventListener('click', () => {
+      if (contacts.length === 0) { alert('No contacts to export.'); return; }
+      const esc = v => (v || '').includes(',') ? '"' + (v || '').replace(/"/g, '""') + '"' : (v || '');
+      const csv = 'Name,Email,HQ,Direct,Mobile,Status\n' + contacts.map(c => [esc(c.name), esc(c.email), esc(c.hq), esc(c.direct), esc(c.mobile), esc(c.status)].join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'artemis-pipeline-' + new Date().toISOString().slice(0,10) + '.csv'; a.click(); URL.revokeObjectURL(a.href);
+    });
+
+    // --- KNOWLEDGE BASE TABS ---
+    document.querySelectorAll('.kb-subtab').forEach(tab => { tab.addEventListener('click', () => { document.querySelectorAll('.kb-subtab').forEach(t => t.classList.remove('active')); tab.classList.add('active'); document.querySelectorAll('.kb-section').forEach(s => s.classList.remove('active')); document.getElementById('kb-' + tab.dataset.kb).classList.add('active'); }); });
+
+    // --- POST-CALL AUTOPSY (BANT Extraction) ---
+    function extractBantAndActionItems() {
+      const notes = document.getElementById('callAutopsyNotes').value.trim();
+      const needsEl = document.getElementById('autopsyNeeds');
+      const stepsEl = document.getElementById('autopsyNextSteps');
+      const card = document.getElementById('autopsyOutputCard');
+      const needKeywords = /\b(budget|need|want|pain|requirement|decision|timeline|authority|qualif|BANT|challenge|goal|priority|approved)\b/i;
+      const stepKeywords = /\b(follow|call|schedule|send|meet|demo|next|action|todo|remind|thursday|pm|am)\b/i;
+      const lines = notes.split(/\r?\n/).map(s => s.replace(/^[\s\-*•]+\s*/, '').trim()).filter(Boolean);
+      let needsList = lines.filter(l => needKeywords.test(l) || (l.length > 35 && !stepKeywords.test(l)));
+      let stepsList = lines.filter(l => stepKeywords.test(l));
+      if (needsList.length === 0 && lines.length > 0) needsList = lines.slice(0, Math.ceil(lines.length / 2));
+      if (stepsList.length === 0 && lines.length > 0) stepsList = lines.slice(Math.ceil(lines.length / 2));
+      if (!notes) { needsList = ['No notes provided.']; stepsList = ['Add call notes and extract again.']; }
+      needsEl.innerHTML = needsList.length ? '<ul>' + needsList.map(n => '<li>' + n + '</li>').join('') + '</ul>' : '<p>No identified needs extracted.</p>';
+      stepsEl.innerHTML = stepsList.length ? '<ul>' + stepsList.map(s => '<li>' + s + '</li>').join('') + '</ul>' : '<p>No next steps extracted.</p>';
+      card.classList.add('visible');
+      try { safeSetStorage(AUTOPSY_KEY, JSON.stringify({ notes, needs: needsList, steps: stepsList, ts: Date.now() })); } catch(_) {}
+    }
+    document.getElementById('extractBantBtn').addEventListener('click', extractBantAndActionItems);
+
+    // --- AI DIALER ---
+    let callSeconds = 0, callInterval = null;
+    const phoneDisplay = document.getElementById('phoneDisplay');
+    const callTimer = document.getElementById('callTimer');
+    const dialCallBtn = document.getElementById('dialCallBtn');
+    const dialHangupBtn = document.getElementById('dialHangupBtn');
+    document.querySelectorAll('.dial-btn[data-digit]').forEach(btn => { btn.addEventListener('click', () => { if (!callInterval) phoneDisplay.value += btn.dataset.digit; }); });
+    dialCallBtn.addEventListener('click', () => { dialCallBtn.style.display = 'none'; dialHangupBtn.style.display = 'block'; callTimer.classList.add('in-call'); callSeconds = 0; callInterval = setInterval(() => { callSeconds++; const m = Math.floor(callSeconds/60); const s = callSeconds%60; callTimer.textContent = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }, 1000); });
+    dialHangupBtn.addEventListener('click', () => { dialHangupBtn.style.display = 'none'; dialCallBtn.style.display = 'block'; callTimer.classList.remove('in-call'); clearInterval(callInterval); callInterval = null; callTimer.textContent = '00:00'; phoneDisplay.value = ''; });
+
+    // --- ARTEMIS MATRIX EMAIL GENERATOR ---
+    function getFirstName(name) { return (name || '').trim().split(/\s+/)[0] || 'there'; }
+    function getCompany(email) { const d = (email || '').split('@')[1]; if (!d) return 'your practice'; const base = d.split('.')[0]; return base ? base.charAt(0).toUpperCase() + base.slice(1).toLowerCase() : 'your practice'; }
+    const EMAIL_TEMPLATES = {
+      founder: (c) => `Hi ${getFirstName(c.name)},\n\nI wanted to follow up on our conversation about body contouring. The T-Shape 2 is a 3-in-1 platform combining RF, vacuum, and LLLT—one device for cellulite, toning, and contouring with zero surgery and minimal downtime.\n\nHere's what sets it apart: Through our Founder Partner Program, Artemis covers the $1,400 monthly device payment in exchange for 5 hours/month of treatments. Zero capital outlay—you add a premium revenue stream while we build case studies together.\n\nWorth a 15-minute call to see if it's a fit for ${getCompany(c.email)}?\n\nBest,\n[Your name]`,
+      glp1: (c) => `Hi ${getFirstName(c.name)},\n\nWith Ozempic and Wegovy driving major weight loss, are your clients at ${getCompany(c.email)} asking about loose skin and facial volume loss? Rapid fat loss depletes collagen—NeoGen Plasma is built to restore what GLP-1 taketh away.\n\nClinically shown to increase skin density by 80%—treats 100% of the skin's architecture while keeping the epidermis intact for safer, faster healing. Ideal for post-weight-loss laxity and facial hollowing.\n\nHappy to walk through the clinicals. Would next week work?\n\nBest,\n[Your name]`,
+      breakup: (c) => `Hi ${getFirstName(c.name)},\n\nI've reached out a few times and don't want to become noise. Before I close your file, I wanted one last ask: is body contouring or post-weight-loss skin restoration something ${getCompany(c.email)} is actively evaluating right now?\n\nIf yes—let's talk. If the timing isn't right, no worries. Just say the word and I'll check back in 6 months.\n\nEither way, appreciate your time.\n\nBest,\n[Your name]`
+    };
+    function applyEmailStrategy(c) {
+      const strat = document.querySelector('.strategy-btn.active')?.dataset?.strategy || 'founder';
+      const template = EMAIL_TEMPLATES[strat];
+      document.getElementById('emailEditor').value = template ? template(c || selectedFollowupContact) : '';
+    }
+    document.querySelectorAll('.strategy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.strategy-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (selectedFollowupContact) applyEmailStrategy(selectedFollowupContact);
+      });
+    });
+    document.getElementById('sendEmailBtn').addEventListener('click', () => { const t = document.getElementById('emailEditor').value; if (t.trim()) alert('Email queued for send. (Demo)'); });
+
+    const notifButton = document.getElementById('notifButton');
+    const notifMenu = document.getElementById('notifMenu');
+    notifButton.addEventListener('click', e => { e.stopPropagation(); notifMenu.classList.toggle('open'); });
+    document.addEventListener('click', e => { if (!notifButton.contains(e.target) && !notifMenu.contains(e.target)) notifMenu.classList.remove('open'); });
+
+    // --- COMMAND PALETTE (Ctrl+K) ---
+    const paletteOverlay = document.getElementById('commandPaletteOverlay');
+    const paletteInput = document.getElementById('commandPaletteInput');
+    const paletteResults = document.getElementById('commandPaletteResults');
+    const quickAddSection = document.querySelector('.quick-add-card');
+
+    function openCommandPalette() {
+      paletteOverlay.classList.add('open');
+      paletteInput.value = '';
+      paletteInput.focus();
+      renderPaletteResults('');
+    }
+
+    function closeCommandPalette() {
+      paletteOverlay.classList.remove('open');
+    }
+
+    function renderPaletteResults(q) {
+      const ql = (q || '').trim().toLowerCase();
+      const items = [];
+      const showQuickAdd = !ql || 'add'.startsWith(ql) || 'quick add contact'.includes(ql);
+      if (showQuickAdd) {
+        items.push({ type: 'action', label: 'Quick Add Contact', shortcut: 'Opens add form', icon: '➕', action: () => { closeCommandPalette(); switchView('pipeline'); quickAddSection?.scrollIntoView({ behavior: 'smooth' }); document.getElementById('name')?.focus(); } });
+      }
+      loadContacts();
+      if (contacts.length > 0 && ql) {
+        const matched = contacts.filter(c =>
+          (c.name || '').toLowerCase().includes(ql) || (c.email || '').toLowerCase().includes(ql)
+        ).slice(0, 8);
+        matched.forEach(c => {
+          items.push({ type: 'contact', label: c.name, shortcut: c.email || '', icon: '👤', action: () => { closeCommandPalette(); switchView('pipeline'); const row = document.querySelector(`tr[data-contact-id="${c.id}"]`); row?.scrollIntoView({ behavior: 'smooth' }); } });
+        });
+      }
+      paletteResults.innerHTML = '';
+      let lastSection = '';
+      items.forEach((item, i) => {
+        const section = item.type === 'contact' ? 'Contacts' : 'Commands';
+        if (section !== lastSection) { lastSection = section; const h = document.createElement('div'); h.className = 'command-palette-section'; h.textContent = section; paletteResults.appendChild(h); }
+        const div = document.createElement('div');
+        div.className = 'command-palette-item' + (i === 0 ? ' highlighted' : '');
+        div.innerHTML = `<span class="cmd-icon">${item.icon}</span><span>${escapeHtml(item.label)}</span><span class="cmd-desc">${escapeHtml(item.shortcut)}</span>`;
+        div.addEventListener('click', item.action);
+        paletteResults.appendChild(div);
+      });
+    }
+
+    function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'k' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); paletteOverlay.classList.contains('open') ? closeCommandPalette() : openCommandPalette(); return; }
+      if (e.key === 'Escape' && paletteOverlay.classList.contains('open')) { e.preventDefault(); closeCommandPalette(); }
+    });
+
+    paletteInput.addEventListener('input', () => renderPaletteResults(paletteInput.value));
+    paletteOverlay.addEventListener('click', e => { if (e.target === paletteOverlay) closeCommandPalette(); });
+
+    // Power Hour
+    const powerHourToggle = document.getElementById('powerHourToggle');
+    const powerHourCountdown = document.getElementById('powerHourCountdown');
+    const powerHourSplit = document.getElementById('powerHourSplit');
+    const mainEl = document.querySelector('main');
+    const dialerView = document.getElementById('dialer');
+    const followupsView = document.getElementById('followups');
+
+    let powerHourActive = false;
+    let powerHourSeconds = 45 * 60;
+    let powerHourInterval = null;
+
+    function startPowerHourCountdown() {
+      powerHourSeconds = 45 * 60;
+      powerHourCountdown.classList.add('visible');
+      const tick = () => {
+        const m = Math.floor(powerHourSeconds / 60);
+        const s = powerHourSeconds % 60;
+        powerHourCountdown.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+        powerHourSeconds--;
+        if (powerHourSeconds < 0) { clearInterval(powerHourInterval); powerHourInterval = null; exitPowerHour(); }
+      };
+      tick();
+      powerHourInterval = setInterval(tick, 1000);
+    }
+
+    function enterPowerHour() {
+      powerHourActive = true;
+      powerHourToggle.classList.add('active');
+      appLayout.classList.add('power-hour-mode');
+      switchView('pipeline');
+      powerHourSplit.appendChild(dialerView);
+      powerHourSplit.appendChild(followupsView);
+      dialerView.style.display = 'flex';
+      followupsView.style.display = 'flex';
+      startPowerHourCountdown();
+    }
+
+    function exitPowerHour() {
+      powerHourActive = false;
+      powerHourToggle.classList.remove('active');
+      powerHourCountdown.classList.remove('visible');
+      appLayout.classList.remove('power-hour-mode');
+      if (powerHourInterval) { clearInterval(powerHourInterval); powerHourInterval = null; }
+      const kbEl = document.getElementById('kb');
+      mainEl.insertBefore(followupsView, kbEl);
+      mainEl.insertBefore(dialerView, followupsView);
+      dialerView.style.display = '';
+      followupsView.style.display = '';
+      switchView(document.querySelector('.nav-tab.active')?.dataset?.view || 'pipeline');
+    }
+
+    powerHourToggle.addEventListener('click', () => { powerHourActive ? exitPowerHour() : enterPowerHour(); });
+
+    // --- INIT ---
+    loadContacts();
+    renderContacts();
+  </script>
+</body>
+</html>
